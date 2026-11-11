@@ -1,72 +1,101 @@
-# RaceDay – PROG6212 Part 2 RESTful API
+# RaceDay API (PROG6212 Part 2)
 
-This solution implements the RaceDay REST API in ASP.NET Core 11, using C#, Entity Framework Core Code First, SQL Server, session authentication, role-based authorization, Swagger UI, xUnit integration tests, and GitHub Actions.
+A RESTful API for managing road events: registration, event setup, enrolments and race results. Organisers run events; Participants enrol and track their results.
 
-> **IDE compatibility:** .NET 11 requires Visual Studio 2026 for supported Visual Studio IDE development. Visual Studio 2022 does not officially support targeting .NET 11. Install Visual Studio 2026 Community (ASP.NET and web development workload) before opening this solution. The .NET 11 SDK can also build the solution from a terminal.
+**Built with:** ASP.NET Core 11 · C# · Entity Framework Core (Code First) · SQL Server · session authentication · Swagger UI · xUnit · GitHub Actions
+
+> **IDE note:** .NET 11 is only supported in **Visual Studio 2026**. Visual Studio 2022 cannot target it. If you prefer a terminal, the .NET 11 SDK builds the solution on its own.
+
+---
+
+## Contents
+
+1. [Features](#1-features)
+2. [Roles and permissions](#2-roles-and-permissions)
+3. [Prerequisites](#3-prerequisites)
+4. [Getting started](#4-getting-started)
+5. [Database setup](#5-database-setup)
+6. [Using the API through Swagger](#6-using-the-api-through-swagger)
+7. [Endpoint reference](#7-endpoint-reference)
+8. [Running the tests](#8-running-the-tests)
+9. [Continuous integration](#9-continuous-integration)
+10. [Commit plan](#10-commit-plan)
+11. [Video presentation checklist](#11-video-presentation-checklist)
+12. [Submission checklist](#12-submission-checklist)
+13. [Scope and Part 3](#13-scope-and-part-3)
+
+---
 
 ## 1. Features
 
-- Registration and login for `Organiser` and `Participant` roles.
-- Password hashing using ASP.NET Core `PasswordHasher<AppUser>`; plaintext passwords are never stored.
-- Server-side session state stores the authenticated user ID, role, and email.
-- Role-based authorization and event ownership checks on protected endpoints.
-- User profile viewing and editing.
-- Event CRUD and event-type filtering.
-- Event categories for age ranges or distance ranges.
-- Participant enrolments and Organiser enrolment views.
-- Results capture, correction, and Participant result history.
-- Swagger UI with XML endpoint descriptions.
-- EF Core Code-First database creation.
-- Automated API integration tests and GitHub Actions build/test workflow.
+- Registration and login for **Organiser** and **Participant** accounts
+- Passwords hashed with ASP.NET Core `PasswordHasher<AppUser>`; plaintext passwords are never stored
+- Server-side sessions holding the user's ID, role and email
+- Role-based authorisation, plus ownership checks on protected endpoints
+- Profile viewing and editing
+- Event CRUD with filtering by event type
+- Event categories (age ranges or distance ranges)
+- Participant enrolments and Organiser enrolment views
+- Result capture, result correction and Participant result history
+- Swagger UI with XML endpoint descriptions
+- EF Core Code First database creation
+- Integration tests and a GitHub Actions build-and-test workflow
 
-## 2. Roles
+## 2. Roles and permissions
 
-- **Organiser:** creates, edits and deletes their own events; manages categories; views enrolments for their events; records and corrects results for their events.
-- **Participant:** views events and categories; enrols once per event; views and cancels their own enrolments; views their own results; views and updates their own profile.
+| Role | Can do |
+|---|---|
+| **Organiser** | Create, edit and delete their own events; manage categories; view enrolments for their events; record and correct results for their events |
+| **Participant** | View events and categories; enrol once per event; view and cancel their own enrolments; view their own results; view and update their own profile |
 
-The API enforces these rules on the server. A user cannot gain Organiser access by changing a request body after registration; the role is saved at registration and read from the authenticated session.
+All rules are enforced on the server. The role is saved at registration and read from the authenticated session, so changing a request body later cannot grant Organiser access.
 
-## 3. Software required
+## 3. Prerequisites
 
-1. Visual Studio 2026 Community or later, with **ASP.NET and web development** workload.
-2. .NET 11 SDK (`dotnet --list-sdks` should list an `11.0.xxx` SDK).
-3. SQL Server Database Engine. For local development, SQL Server Express LocalDB is sufficient.
-4. SQL Server Management Studio (SSMS), which you already have, to inspect the database.
-5. Git and a GitHub account.
+| Requirement | Notes |
+|---|---|
+| Visual Studio 2026 Community or later | Install the **ASP.NET and web development** workload |
+| .NET 11 SDK | `dotnet --list-sdks` should show an `11.0.xxx` entry |
+| SQL Server Database Engine | SQL Server Express LocalDB is enough for local development |
+| SQL Server Management Studio (SSMS) | For inspecting the database |
+| Git and a GitHub account | For version control and CI |
 
-### Check whether LocalDB is installed
+### Check that LocalDB is installed
 
-Open **Windows PowerShell** and run:
+In Windows PowerShell:
 
 ```powershell
 sqllocaldb info
 ```
 
-If the output lists `MSSQLLocalDB`, check that instance:
+If `MSSQLLocalDB` is listed, inspect it:
 
 ```powershell
 sqllocaldb info MSSQLLocalDB
 ```
 
-If PowerShell says `sqllocaldb` is not recognised or no instance is listed, install SQL Server Express with LocalDB. LocalDB can also be installed through Visual Studio Installer under the Data storage and processing components, depending on the installed SQL Server/Visual Studio components.
+If `sqllocaldb` is not recognised or no instance is listed, install SQL Server Express with LocalDB. Depending on your setup, LocalDB is also available through Visual Studio Installer under the *Data storage and processing* components.
 
-Official references:
-- .NET downloads: https://dotnet.microsoft.com/download/dotnet/11.0
-- Visual Studio: https://visualstudio.microsoft.com/vs/
-- SQL Server downloads: https://www.microsoft.com/en-us/sql-server/sql-server-downloads
-- LocalDB documentation: https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb
+**Downloads and docs**
 
-## 4. Open the solution in Visual Studio
+- [.NET 11](https://dotnet.microsoft.com/download/dotnet/11.0)
+- [Visual Studio](https://visualstudio.microsoft.com/vs/)
+- [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+- [LocalDB documentation](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb)
 
-1. Extract the project folder into your Part 2 repository branch/folder.
+## 4. Getting started
+
+1. Extract the project into your Part 2 repository branch or folder.
 2. Open `RaceDay.sln` in Visual Studio 2026.
-3. In Solution Explorer, confirm there are two projects: `RaceDay.Api` and `RaceDay.Api.Tests`.
-4. Wait for NuGet package restore to finish.
+3. In Solution Explorer, confirm the two projects: `RaceDay.Api` and `RaceDay.Api.Tests`.
+4. Wait for NuGet restore to finish.
 5. Right-click the solution and choose **Build Solution**.
 
-## 5. Configure SQL Server
+## 5. Database setup
 
-The default connection string is in `RaceDay.Api/appsettings.json`:
+### Connection string
+
+The default is in `RaceDay.Api/appsettings.json`:
 
 ```json
 {
@@ -76,27 +105,25 @@ The default connection string is in `RaceDay.Api/appsettings.json`:
 }
 ```
 
-This uses a separate database named `RaceDayApiDb`. The table design and constraints correspond to the six Part 1 entities. Keeping this as a separate database avoids conflicts with the `RaceDayDb` created by your Part 1 SQL script.
+This targets a separate database, `RaceDayApiDb`, so it won't clash with the `RaceDayDb` created by your Part 1 SQL script.
 
-If you have a named SQL Server Express instance instead of LocalDB, edit the server part. A common Express connection string is:
+If you use a named SQL Server Express instance instead of LocalDB, change the server value:
 
 ```json
 "RaceDay": "Server=localhost\\SQLEXPRESS;Database=RaceDayApiDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
 ```
 
-Use the exact instance name shown in SSMS under **Connect > Database Engine > Server name**. Do not guess the instance name.
+Use the exact instance name shown in SSMS under **Connect > Database Engine > Server name**. Don't guess it.
 
-## 6. Create the database (EF Core Code First)
+### Creating the database (Code First)
 
-The API calls `EnsureCreatedAsync()` when it starts. This creates `RaceDayApiDb` and the tables from the EF Core model if the database does not already exist. The EventTypes table is seeded with Run, Walk, and Cycle.
+On startup the API calls `EnsureCreatedAsync()`, which creates `RaceDayApiDb` and its tables from the EF Core model if the database doesn't exist. The `EventTypes` table is seeded with Run, Walk and Cycle.
 
-1. Start the SQL Server Database Engine / LocalDB.
-2. In Visual Studio, set `RaceDay.Api` as the startup project.
+1. Make sure SQL Server or LocalDB is running.
+2. Set `RaceDay.Api` as the startup project.
 3. Press **F5** or **Ctrl+F5**.
-4. The API creates the database on startup.
-5. Open SSMS and connect to `(localdb)\\MSSQLLocalDB` (or your configured instance).
-6. Refresh Databases. You should see `RaceDayApiDb`.
-7. Expand Tables and confirm these six tables exist:
+4. In SSMS, connect to `(localdb)\MSSQLLocalDB` (or your configured instance) and refresh **Databases**.
+5. Confirm `RaceDayApiDb` exists and contains these six tables:
    - `dbo.AppUsers`
    - `dbo.EventTypes`
    - `dbo.Events`
@@ -104,7 +131,9 @@ The API calls `EnsureCreatedAsync()` when it starts. This creates `RaceDayApiDb`
    - `dbo.Enrolments`
    - `dbo.Results`
 
-Example SSMS verification query:
+These match the six entities from Part 1.
+
+Verification query:
 
 ```sql
 USE RaceDayApiDb;
@@ -119,19 +148,18 @@ SELECT * FROM dbo.Results;
 GO
 ```
 
-**Code-First note:** this coursework starter uses `EnsureCreated` to make the first run straightforward. `EnsureCreated` does not update an existing schema when the model changes. If you later change entities, use EF Core migrations (and replace `EnsureCreated` with `Migrate`) before relying on the changed schema. Do not run the Part 1 SQL script against `RaceDayApiDb`; EF creates this database from the C# model.
+> **Schema changes:** `EnsureCreated` does not update an existing schema when the model changes. If you change the entities later, switch to EF Core migrations (replace `EnsureCreated` with `Migrate`). Never run the Part 1 SQL script against `RaceDayApiDb`; EF creates this database from the C# model.
 
-## 7. Run and use Swagger
+## 6. Using the API through Swagger
 
 1. Start `RaceDay.Api` with F5.
-2. Browse to `https://localhost:7081/swagger` (or the URL shown in the Visual Studio output/browser).
-3. Expand `POST /api/auth/register` and register a test user.
-4. Register one Organiser and one Participant using different email addresses.
-5. Call `POST /api/auth/login` with the account you want to test. The browser stores the `.RaceDay.Session` cookie automatically.
-6. In the same Swagger browser tab and origin, call protected endpoints. The cookie is sent automatically.
-7. Call `POST /api/auth/logout` to clear the current session.
+2. Browse to `https://localhost:7081/swagger` (or the URL shown in the Visual Studio output).
+3. Use `POST /api/auth/register` to create one Organiser and one Participant, each with a different email address.
+4. Call `POST /api/auth/login` with the account you want to test. The browser stores the `.RaceDay.Session` cookie automatically.
+5. Call protected endpoints from the **same browser tab and origin**; the cookie is sent for you.
+6. Call `POST /api/auth/logout` to end the session.
 
-Example registration request:
+**Example registration request**
 
 ```json
 {
@@ -144,7 +172,7 @@ Example registration request:
 }
 ```
 
-Example login request:
+**Example login request**
 
 ```json
 {
@@ -153,23 +181,22 @@ Example login request:
 }
 ```
 
-### Suggested API demonstration order
+### Suggested demo order
 
-1. Register Organiser.
-2. Log in as Organiser.
-3. Create an event using EventTypeId `1` (Run), `2` (Walk), or `3` (Cycle).
-4. Add an Age or Distance category to that event.
-5. Log out, register a Participant, and log in as Participant.
-6. Browse events and categories.
-7. Enrol in the event using its event ID and category ID.
-8. View `/api/enrolments/mine`.
-9. Log out and log in as the Organiser.
-10. View that event's enrolments.
-11. Mark the event as Completed using `PUT /api/events/{eventId}` and set an event date in the past.
-12. Record a result using `POST /api/enrolments/{enrolmentId}/result`.
-13. Log in as the Participant and view `/api/results/mine`.
+1. Register an Organiser and log in.
+2. Create an event using `EventTypeId` `1` (Run), `2` (Walk) or `3` (Cycle).
+3. Add an Age or Distance category to the event.
+4. Log out, register a Participant and log in.
+5. Browse events and categories.
+6. Enrol using the event ID and category ID.
+7. View `GET /api/enrolments/mine`.
+8. Log out and log back in as the Organiser.
+9. View the event's enrolments.
+10. Mark the event as Completed with `PUT /api/events/{eventId}`, setting an event date in the past.
+11. Record a result with `POST /api/enrolments/{enrolmentId}/result`.
+12. Log in as the Participant and view `GET /api/results/mine`.
 
-## 8. Endpoint list
+## 7. Endpoint reference
 
 | Method | Route | Access |
 |---|---|---|
@@ -190,26 +217,25 @@ Example login request:
 | POST | `/api/enrolments` | Participant |
 | GET | `/api/enrolments/mine` | Participant |
 | GET | `/api/events/{eventId}/enrolments` | Event-owning Organiser |
-| GET | `/api/enrolments/{enrolmentId}` | Record owner / event Organiser |
+| GET | `/api/enrolments/{enrolmentId}` | Record owner or event Organiser |
 | DELETE | `/api/enrolments/{enrolmentId}` | Enrolment-owning Participant |
 | POST | `/api/enrolments/{enrolmentId}/result` | Event-owning Organiser |
 | GET | `/api/results/mine` | Participant |
 | GET | `/api/events/{eventId}/results` | Event-owning Organiser |
-| GET | `/api/results/{resultId}` | Result owner / event Organiser |
+| GET | `/api/results/{resultId}` | Result owner or event Organiser |
 | PUT | `/api/results/{resultId}` | Event-owning Organiser |
 
-## 9. Run automated tests
+## 8. Running the tests
 
-### Visual Studio Test Explorer
+### Visual Studio
 
 1. Open **Test > Test Explorer**.
 2. Build the solution.
-3. Select **Run All**.
-4. Confirm all tests pass.
+3. Click **Run All** and confirm every test passes.
 
 ### Command line
 
-Open a terminal in the folder containing `RaceDay.sln`:
+From the folder containing `RaceDay.sln`:
 
 ```powershell
 dotnet restore RaceDay.sln
@@ -217,84 +243,79 @@ dotnet build RaceDay.sln --configuration Release
 dotnet test RaceDay.sln --configuration Release
 ```
 
-The integration tests use EF Core InMemory, so they do not require a SQL Server instance. The actual API uses SQL Server through the connection string.
+The integration tests use EF Core InMemory, so they don't need a SQL Server instance. The running API uses SQL Server via the connection string.
 
-Tests cover registration, duplicate email rejection, invalid roles, login, incorrect passwords, unauthenticated access, role rejection, event creation, enrolment, duplicate enrolment, enrolment privacy, result capture, and Participant result history.
+**Coverage:** registration, duplicate email rejection, invalid roles, login, incorrect passwords, unauthenticated access, role rejection, event creation, enrolment, duplicate enrolment, enrolment privacy, result capture and Participant result history.
 
-## 10. GitHub Actions CI/CD
+## 9. Continuous integration
 
-The workflow is `.github/workflows/part2-build-test.yml`. It restores packages, builds the solution, and runs all tests on every push and pull request.
+The workflow lives at `.github/workflows/part2-build-test.yml`. On every push and pull request it restores packages, builds the solution and runs all tests.
 
 After pushing to GitHub:
 
-1. Open the repository on GitHub.
-2. Select **Actions**.
-3. Open **Part 2 - Build and Test RaceDay API**.
-4. Wait for the workflow to finish.
-5. Confirm the run has a green check mark.
-6. Take a screenshot of the successful run and insert it below.
+1. Open the repository and select **Actions**.
+2. Open **Part 2 - Build and Test RaceDay API**.
+3. Wait for the run to finish and confirm the green check mark.
+4. Screenshot the successful run and paste it below.
 
 `[Add screenshot of successful green GitHub Actions build here]`
 
-## 11. Suggested meaningful Part 2 commit sequence
+## 10. Commit plan
 
-Make each commit after the described work has actually been completed. Do not manufacture empty commits.
+Commit after the described work is actually done. Don't create empty commits just to hit a number.
 
-1. `Create RaceDay ASP.NET Core API and test solution`
-2. `Add EF Core SQL Server provider and database configuration`
-3. `Create AppUser and EventType domain models`
-4. `Create Event and Category domain models`
-5. `Create Enrolment and Result domain models`
-6. `Configure EF Core relationships and constraints`
-7. `Add Code First database initialization and event type seed data`
-8. `Implement session authentication handler`
-9. `Implement secure registration and password hashing`
-10. `Implement login logout and session state`
-11. `Add authenticated profile read and update endpoints`
-12. `Implement public event browsing and filtering`
-13. `Implement Organiser event create update and delete endpoints`
-14. `Implement event category management endpoints`
-15. `Implement Participant enrolment and duplicate prevention`
-16. `Implement Organiser enrolment views and ownership checks`
-17. `Implement race result capture and Participant result history`
-18. `Add Swagger documentation for API endpoints`
-19. `Add API integration tests for authentication and authorization`
-20. `Add enrolment and results integration tests and GitHub Actions workflow`
+1. Create RaceDay ASP.NET Core API and test solution
+2. Add EF Core SQL Server provider and database configuration
+3. Create AppUser and EventType domain models
+4. Create Event and Category domain models
+5. Create Enrolment and Result domain models
+6. Configure EF Core relationships and constraints
+7. Add Code First database initialization and event type seed data
+8. Implement session authentication handler
+9. Implement secure registration and password hashing
+10. Implement login, logout and session state
+11. Add authenticated profile read and update endpoints
+12. Implement public event browsing and filtering
+13. Implement Organiser event create, update and delete endpoints
+14. Implement event category management endpoints
+15. Implement Participant enrolment and duplicate prevention
+16. Implement Organiser enrolment views and ownership checks
+17. Implement race result capture and Participant result history
+18. Add Swagger documentation for API endpoints
+19. Add API integration tests for authentication and authorisation
+20. Add enrolment and results integration tests and GitHub Actions workflow
 
-## 12. Video presentation checklist
+## 11. Video presentation checklist
 
 Record your own voice and screen. Do not use an AI-generated voice.
 
-- Introduce RaceDay and explain the API's purpose.
-- Show the Visual Studio solution and explain the folder structure.
-- Explain the six EF Core entities and how they match Part 1.
-- Show registration, password hashing, login, session cookie, and logout.
-- Demonstrate Organiser and Participant permissions, including a forbidden request.
-- Demonstrate event/category creation, enrolment, and results.
-- Show Swagger UI and explain the request bodies and response codes.
-- Run all unit tests and show the passing results.
-- Show the GitHub Actions green build.
+- [ ] Introduce RaceDay and the API's purpose
+- [ ] Walk through the Visual Studio solution and folder structure
+- [ ] Explain the six EF Core entities and how they match Part 1
+- [ ] Show registration, password hashing, login, the session cookie and logout
+- [ ] Demonstrate Organiser and Participant permissions, including a forbidden request
+- [ ] Demonstrate event and category creation, enrolment and results
+- [ ] Show Swagger UI and explain request bodies and response codes
+- [ ] Run all tests and show them passing
+- [ ] Show the green GitHub Actions build
 
 **YouTube video:** `[Add your unlisted Part 2 demonstration URL here]`
 
-## 13. Before submitting
+## 12. Submission checklist
 
-- [ ] Open and build the solution in Visual Studio 2026.
-- [ ] Confirm the API starts and Swagger loads.
-- [ ] Confirm `RaceDayApiDb` is created in SQL Server.
-- [ ] Verify all six tables in SSMS.
-- [ ] Register and log in as both roles.
-- [ ] Demonstrate all endpoint groups.
-- [ ] Confirm unauthenticated and wrong-role requests are rejected.
-- [ ] Run all tests locally and confirm they pass.
-- [ ] Push all files to your Part 2 branch/folder.
-- [ ] Make at least 20 meaningful commits from your own GitHub account.
-- [ ] Confirm GitHub Actions is green and add a screenshot here.
-- [ ] Record your narrated video and add the unlisted YouTube link.
-- [ ] Submit the GitHub repository link on ARC.
+- [ ] Solution opens and builds in Visual Studio 2026
+- [ ] API starts and Swagger loads
+- [ ] `RaceDayApiDb` is created and all six tables are verified in SSMS
+- [ ] Registered and logged in as both roles
+- [ ] Demonstrated every endpoint group
+- [ ] Unauthenticated and wrong-role requests are rejected
+- [ ] All tests pass locally
+- [ ] All files pushed to the Part 2 branch/folder
+- [ ] At least 20 meaningful commits from your own GitHub account
+- [ ] GitHub Actions is green and the screenshot is added above
+- [ ] Narrated video recorded and unlisted YouTube link added above
+- [ ] GitHub repository link submitted on ARC
 
-## 14. Scope boundary for Part 3
+## 13. Scope and Part 3
 
-Part 3 extends this API with Azure Blob Storage image uploads and adds the MVC frontend and Docker container. Those features are intentionally not implemented in this Part 2 starter; they will be added when completing Part 3, as required by the POE.
-#   R a c e D a y  
- 
+This is the Part 2 starter. Part 3 extends it with Azure Blob Storage image uploads, an MVC frontend and a Docker container. Those features are intentionally not implemented here.
